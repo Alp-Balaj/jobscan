@@ -1,0 +1,211 @@
+# profile.yml — who you are and what you want. Copy to config/profile.yml.
+#
+#   filters:  cheap, deterministic pre-filtering during the scan (no LLM)
+#   context:  free text your agent reads when scoring the shortlist
+#
+# Every filter is optional. Omit a key and nothing is filtered on it.
+#
+# ── How this one is built ────────────────────────────────────────────────────
+# One wide net across every engineering family, and a context block that ranks
+# them. The net is deliberately loose: discovery is free, and a title you never
+# match is a job you never see. The RANKING is what keeps the output usable —
+# without it your agent scores an embedded firmware role and a backend role as
+# equally good, and the shortlist becomes a job board.
+#
+# So: filters decide what you SEE. context decides what you're TOLD to take
+# seriously. Keep the tiers in context honest or the scoring is worthless.
+
+candidate:
+  name: "Alp Balaj"
+  location: "Prishtinë, Kosovo"
+  timezone: "Europe/Belgrade"      # CET/CEST — matters for "EU hours" postings
+  github: "github.com/..."
+  linkedin: "linkedin.com/in/..."
+
+filters:
+  # Wide net. Substring match, case-insensitive — so "engineer" would match
+  # everything and is deliberately absent; each entry below is specific enough
+  # to mean something.
+  title_include:
+    # ── backend / full-stack ──
+    - backend
+    - "back end"
+    - "back-end"
+    - full stack
+    - fullstack
+    - "full-stack"
+    - software engineer
+    - software developer
+    - api
+    - microservice
+
+    # ── languages / runtimes you'd actually take ──
+    - node
+    - typescript
+    - javascript
+    - python
+    - golang
+    - " go "                       # padded: bare "go" matches "Django", "Goal"
+    - ".net"
+    - c#
+    - java
+
+    # ── frontend ──
+    - frontend
+    - "front end"
+    - "front-end"
+    - react
+    - vue
+    - angular
+    - web developer
+
+    # ── AI / ML engineering (application layer, not research) ──
+    - ai engineer
+    - ml engineer
+    - machine learning engineer
+    - llm
+    - genai
+    - "generative ai"
+    - rag
+    - ai developer
+
+    # ── platform / systems / infra ──
+    - platform engineer
+    - systems engineer
+    - infrastructure engineer
+    - site reliability
+    - sre
+    - devops
+    - cloud engineer
+
+    # ── QA / test automation ──
+    - quality assurance
+    - qa
+    - qe
+    - sdet
+    - software tester
+    - test engineer
+    - test automation
+    - automation engineer
+    - quality engineer
+
+    # ── embedded (stretch — see context) ──
+    - embedded
+    - firmware
+    - iot
+
+  # Seniority and non-engineering. These are the ones that pollute a wide net.
+  title_exclude:
+    - principal
+    - "staff engineer"
+    - senior staff
+    - director
+    - "head of"
+    - "vp of"
+    - vice president
+    - architect                    # usually 10+ yrs; drop this line if you disagree
+    - manager
+    - intern
+    - internship
+    - unpaid
+    - volunteer
+    - recruiter
+    - sales
+    - account executive
+
+  # Phrase appears anywhere (title, location, description) → drop.
+  exclude:
+    - "US only"
+    - "United States only"
+    - "must be located in the US"
+    - "must be authorized to work in the United States"
+    - "US citizen"
+    - "security clearance"
+    - "no visa sponsorship"
+    - "no sponsorship"
+    - "unpaid"
+    - "commission only"
+
+  # A posting passes if it looks remote OR matches one of these.
+  # Remote detection is automatic — no need to list "remote".
+  location_include:
+    - europe
+    - emea
+    - eu
+    - cet
+    - cest
+    - kosovo
+    - albania
+    - "north macedonia"
+    - serbia
+    - germany
+    - austria
+    - switzerland
+    - netherlands
+    - poland
+    - portugal
+    - spain
+    - ireland
+    - "czech"
+    - estonia
+    - lithuania
+    - romania
+    - bulgaria
+    - croatia
+    - slovenia
+    - greece
+    - "united kingdom"
+
+# ── Read by your agent when scoring. Not used by the scanner. ────────────────
+context: |
+  Full-stack developer, backend-leaning, finishing a BSc at UBT Prishtinë.
+  Core competence: HTTP services and APIs, relational databases (Postgres),
+  message queues and async flows, and browser/E2E test automation. Develops on
+  Windows. Reads and writes application code across the stack rather than
+  specialising narrowly.
+
+  Based in Kosovo (non-EU). Needs remote-friendly employers, or employers that
+  sponsor / support relocation. NOT eligible for US-only roles, and not for EU
+  roles that require existing EU work authorization with no sponsorship. Remote
+  contractor arrangements paying in EUR are ideal.
+
+  ── How to score role families ──────────────────────────────────────────────
+  The scanner casts a deliberately wide net. Do not treat every match as an
+  equally good fit. Rank against these tiers and say which tier you used.
+
+  TIER 1 — core, evidence exists. Score on merit, up to 5.
+    Backend engineering. Full-stack. API / service work. Anything centred on
+    HTTP services, Postgres, or queue-backed async flows. This is the actual
+    background; judge these on stack overlap and seniority, nothing else.
+
+  TIER 2 — strong adjacent, real transferable evidence. Cap at 4 unless the
+  posting explicitly welcomes a developer moving into the role.
+    QA / test automation / SDET — the E2E and browser automation experience is
+    directly relevant, and being able to read the system under test is the
+    differentiator over a career manual tester. Frontend — real but shallower
+    than the backend work; strongest where the role is full-stack-leaning.
+
+  TIER 3 — plausible with a story, thin production evidence. Cap at 3.
+    AI / LLM application engineering. There is genuine hands-on work here
+    (a thesis project integrating AI into a recipe application), but it is
+    academic, not production at scale. Score well only where the posting wants
+    a software engineer who can wire up models and APIs — not where it wants
+    ML fundamentals, training, or research. Never claim ML depth that isn't
+    there.
+    Platform / DevOps / SRE — adjacent through backend and CI familiarity, but
+    no evidence of running production infrastructure at scale. Treat "systems
+    engineer" carefully: in EU postings it often means sysadmin/infrastructure,
+    in US postings it can mean low-level C. Read the body before scoring.
+
+  TIER 4 — stretch, no supporting evidence. Cap at 2. Do not recommend
+  applying unless the posting is explicitly junior or training-provided.
+    Embedded / firmware / IoT. Nothing in the background supports this: no C or
+    C++ systems work, no hardware, no RTOS. It is in the filter net for
+    discovery only. Flag these honestly as a gap rather than dressing up the
+    web experience to fit — a cover letter that stretches here reads as
+    unserious to an embedded hiring manager.
+
+  ── Always ──────────────────────────────────────────────────────────────────
+  Prefer roles that are junior-to-mid and explicitly remote or sponsoring. When
+  a posting is Tier 3 or 4, say what the gap is in one line rather than padding
+  the fit. A shorter honest shortlist beats a long flattering one.

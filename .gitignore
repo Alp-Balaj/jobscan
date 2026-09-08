@@ -1,0 +1,6 @@
+node_modules/
+data/jobs.json
+data/jobs.md
+config/portals.yml
+config/profile.yml
+.env

@@ -1,0 +1,90 @@
+# portals.yml — what to scan. Copy to config/portals.yml and edit.
+#
+# Two sections, routed identically:
+#   job_boards        one entry = many employers (remote feeds, aggregators)
+#   tracked_companies one entry = one employer's ATS
+#
+# Board feeds need an explicit `provider:`. ATS entries usually auto-detect
+# from `careers_url` — run `node detect-ats.mjs <url>` to find out which.
+
+job_boards:
+  # ── Remote-first feeds. These work from anywhere, including Kosovo. ────────
+  - name: RemoteOK
+    provider: remoteok
+    enabled: true
+
+  - name: Remotive
+    provider: remotive
+    enabled: true
+
+  - name: WeWorkRemotely
+    provider: weworkremotely
+    enabled: true
+
+  - name: Working Nomads
+    provider: workingnomads
+    enabled: true
+
+  - name: Himalayas
+    provider: himalayas
+    enabled: true
+
+  - name: Jobicy
+    provider: jobicy
+    enabled: true
+
+  - name: NoDesk
+    provider: nodesk
+    enabled: true
+
+  - name: Jobspresso
+    provider: jobspresso
+    enabled: true
+
+  - name: 4 Day Week
+    provider: 4dayweek
+    enabled: true
+
+  # ── EU-specific. The two most useful for a Kosovo-based dev. ──────────────
+  # Arbeitnow: German market, English-language postings, flags visa sponsorship.
+  - name: Arbeitnow (DE, English + visa)
+    provider: arbeitnow
+    max_pages: 3
+    enabled: true
+
+  # Landing.jobs: EU tech, explicitly relocation- and contractor-friendly.
+  - name: Landing.jobs (EU)
+    provider: landingjobs
+    enabled: true
+
+tracked_companies:
+  # ── This is the half that reaches the Balkans. ────────────────────────────
+  #
+  # There is no public API for KosovaJob / PortalPunes / Telegrafi Punë — they
+  # are server-rendered classifieds. But regional companies that have outgrown
+  # a spreadsheet usually run hiring on an ATS vendor, and those DO have public
+  # APIs. Point at the company, not at the board.
+  #
+  # Workflow:
+  #   1. Collect careers URLs of companies you'd actually work for
+  #      (Prishtinë, Tiranë, Shkup, plus EU companies open to remote/relocation).
+  #   2. echo them into companies.txt, one per line.
+  #   3. node detect-ats.mjs --file companies.txt
+  #   4. Paste the generated stanzas below.
+  #
+  # Nothing is pre-filled here on purpose: a guessed careers_url is a 404 that
+  # looks like a working config. Verify each one with detect-ats.mjs first.
+  #
+  # Shape once detected:
+  #
+  # - name: Some Company
+  #   careers_url: "https://apply.workable.com/some-company/"
+  #   provider: workable          # omit when the URL auto-detects
+  #   enabled: true
+  #
+  # Vendored ATS providers: greenhouse, lever, ashby, workable, recruitee,
+  # personio, teamtailor, breezy, smartrecruiters.
+  #
+  # Need one that isn't here (bamboohr, workday, join, softgarden, comeet)?
+  # Copy providers/<name>.mjs from the upstream career-ops repo — the contract
+  # is identical and the registry auto-loads it. No wiring needed.

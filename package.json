@@ -1,0 +1,19 @@
+{
+  "name": "jobscan",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal zero-token job scanner. Vendored provider layer from career-ops (MIT).",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "scan": "node scan.mjs",
+    "detect": "node detect-ats.mjs",
+    "recon": "node recon.mjs",
+    "test": "node smoke-test.mjs && node recon-test.mjs"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}
