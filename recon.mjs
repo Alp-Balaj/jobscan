@@ -47,8 +47,10 @@ try {
   const sitemaps = [...robots.matchAll(/^\s*Sitemap:\s*(\S+)/gim)].map((m) => m[1]);
   const blanket = disallows.includes('/');
 
+  const real = disallows.filter((d) => d && d !== '');
   if (blanket) say('⛔', 'Disallow: /', 'this site asks not to be crawled — stop here, see NOTES');
-  else say('✓', `${disallows.length} Disallow rules`, disallows.slice(0, 8).join(' ') || '(none)');
+  else if (!real.length) say('✓', 'Disallow: (empty)', 'an empty Disallow means ALLOW ALL — nothing here blocks you');
+  else say('✓', `${real.length} Disallow rules`, real.slice(0, 8).join(' '));
 
   const apiBlocked = disallows.some((d) => /^\/api/i.test(d));
   if (apiBlocked) say('⚠', '/api is disallowed', 'do not use the JSON endpoints below');
@@ -112,24 +114,70 @@ for (const p of FEED_CANDIDATES) {
 if (!findings.feeds.length) say('·', 'no feeds found');
 
 // ── 5. are the listings actually in the HTML? ───────────────────────────────
-console.log(`\n▸ server-rendered listings?`);
-// Heuristic: job listing pages that SSR have many links whose href looks like a
-// job detail page. A shell app has almost none.
-const links = [...html.matchAll(/href=["']([^"']+)["']/gi)].map((m) => m[1]);
-// Hyphenated slugs matter here: Albanian boards use /vende-pune/,
-// /vende-te-lira-pune/, /shpallje-pune/ — an anchored word-only pattern
-// misses all of them, which would make every local board look client-rendered.
-const JOB_PATH = /\/[^/]*(job|vende|pune|pun[ëe]|punesim|position|vacancy|oferta|listing|shpallje|karrier)[^/]*\//i;
-const jobish = links.filter((h) => JOB_PATH.test(h));
-const uniqueJobish = [...new Set(jobish)];
+console.log(`\n\u25b8 server-rendered listings?`);
+// Heuristic: an SSR listing page carries many links whose PATH looks like a job
+// detail page. Two traps this has to avoid, both found the hard way:
+//   1. The HOST must never be tested. kosovajob.com contains "job", so matching
+//      against the full href scored every asset on the site as a job link.
+//      Parse the URL and test pathname only.
+//   2. Assets (.css/.js/.ico/.json/.png/...) live under paths that can contain
+//      the keyword too. Extension-filter them out.
+const ASSET = /\.(css|js|mjs|json|ico|png|jpe?g|gif|svg|webp|avif|woff2?|ttf|eot|map|xml|txt|pdf)($|\?)/i;
+const JOB_PATH = /\/[^/]*(job|vende|pune|pun[\u00eb\u00e9e]|punesim|position|vacanc|oferta|listing|shpallje|karrier|konkurs)[^/]*\//i;
+
+/** href → pathname (+search), or null for anything not usable. */
+function toPath(href) {
+  try {
+    // Handles absolute, protocol-relative (//host/x) and root-relative (/x).
+    const u = new URL(href, origin);
+    if (u.origin !== origin) return null;          // off-site link
+    if (u.pathname === '/' || u.pathname === '') return null;
+    if (ASSET.test(u.pathname)) return null;
+    return u.pathname;
+  } catch { return null; }
+}
+
+const paths = [...new Set(
+  [...html.matchAll(/href=["']([^"']+)["']/gi)].map((m) => toPath(m[1])).filter(Boolean),
+)];
+const uniqueJobish = paths.filter((p) => JOB_PATH.test(p));
 findings.ssr = uniqueJobish.length >= 5;
 
+// The genuinely useful output: which path PREFIX repeats. That prefix is the
+// anchor your provider's regex should use — far more stable than a CSS class.
+const prefixes = new Map();
+for (const p of uniqueJobish) {
+  const seg = p.split('/').filter(Boolean);
+  if (seg.length < 2) continue;
+  const key = '/' + seg.slice(0, seg.length - 1).join('/') + '/';
+  prefixes.set(key, (prefixes.get(key) ?? 0) + 1);
+}
+const ranked = [...prefixes.entries()].sort((a, b) => b[1] - a[1]);
+
 if (findings.ssr) {
-  say('✓', `${uniqueJobish.length} job-detail links in served HTML`, 'scrapeable without a browser');
+  say('\u2713', `${uniqueJobish.length} job-like paths in served HTML`, `out of ${paths.length} same-origin links`);
+  if (ranked.length) {
+    console.log('   repeating path patterns (anchor your scraper on the top one):');
+    for (const [pre, n] of ranked.slice(0, 6)) console.log(`     ${String(n).padStart(4)} \u00d7  ${pre}<slug>`);
+  }
   console.log('   samples:');
   for (const l of uniqueJobish.slice(0, 5)) console.log(`     ${l}`);
 } else {
-  say('⚠', `only ${uniqueJobish.length} job-detail links`, 'listings are probably injected by JS — use the API, not a scraper');
+  say('\u26a0', `only ${uniqueJobish.length} job-like paths`, `out of ${paths.length} same-origin links \u2014 listings likely injected by JS`);
+  if (paths.length) {
+    console.log('   most common path prefixes seen (is one of these the listing route?):');
+    const all = new Map();
+    for (const p of paths) {
+      const seg = p.split('/').filter(Boolean);
+      if (!seg.length) continue;
+      const k = '/' + seg[0] + '/';
+      all.set(k, (all.get(k) ?? 0) + 1);
+    }
+    for (const [k, n] of [...all.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)) {
+      console.log(`     ${String(n).padStart(4)} \u00d7  ${k}`);
+    }
+    console.log('   → if one looks like the listing route, re-run with --path ' + ([...all.keys()][0] ?? '/jobs'));
+  }
 }
 
 // ── verdict ─────────────────────────────────────────────────────────────────

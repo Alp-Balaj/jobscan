@@ -101,14 +101,34 @@ wiring, no registration list.
 `echojobs` was deliberately left out: upstream retired it in August 2026 when
 the feed went behind bot protection.
 
+## Adding a local board (KosovaJob, PortalPunes, …)
+
+```bash
+node recon.mjs https://theboard.com          # what shape is it?
+node recon.mjs https://theboard.com --path /vende-pune   # narrow to the listing route
+```
+
+Recon reads robots.txt, fingerprints the framework, hunts for JSON endpoints and
+feeds, and reports which **path prefixes repeat** — that prefix is what your
+provider should anchor on, not a CSS class. Then copy `providers/_TEMPLATE.mjs`
+to `providers/<board>.mjs`, keep the shape recon named, delete the other two.
+
+Order of preference is always: feed → JSON API → embedded state → DOM scrape.
+A scraper where an API exists is a bug, not a shortcut.
+
+Note: recon inherits the vendored SSRF guard, so it refuses localhost and
+private IPs. That is deliberate — it is a tool for public boards.
+
 ## Testing
 
 ```bash
-node smoke-test.mjs
+npm test          # smoke-test.mjs + recon-test.mjs
 ```
 
-17 checks covering provider loading, routing, fixture-based fetch and
-normalization, the greenhouse SSRF allowlist, filters, and dedup. Runs offline,
+33 checks covering provider loading, routing, fixture-based fetch and
+normalization, the greenhouse SSRF allowlist, filters, dedup, and recon's link
+classification (including the kosovajob.com regression, where a hostname
+containing "job" made every asset on the site look like a listing). Runs offline,
 so it passes behind a proxy or on a plane. If it's green, the only remaining
 failure mode is a board changing its response shape — which the Source health
 table will show you.
